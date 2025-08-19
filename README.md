@@ -35,10 +35,31 @@
 При проверке тестов через pytest:
 
 Запуск всех тестов с генерацией отчета Allure
-pytest
+python -m pytest --alluredir allure-result
 
 Запуск только UI тестов
 pytest test/test_ui.py -v
 
 Запуск только API тестов
 pytest test/test_api.py -v
+
+## Установка
+
+1. Клонируйте репозиторий:
+   
+   git clone https://github.com/DIPLOM-qa/QA-62/tree/main/test
+   cd repository
+   
+Создайте и активируйте виртуальное окружение (рекомендуется):
+
+python -m venv venv
+# Для Linux/macOS:
+source venv/bin/activate
+# Для Windows:
+.\venv\Scripts\activate
+
+Установите зависимости:
+
+pip install -r requirements.txt
+
+Замените URL репозитория `https://github.com/DIPLOM-qa/QA-62/tree/main/test` .
