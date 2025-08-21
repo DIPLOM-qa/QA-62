@@ -122,8 +122,8 @@ class TestKinopoisk:
                     EC.visibility_of_element_located((
                         By.CSS_SELECTOR, "footer"))
                 )
-                assert "Яндекс" in footer.text
-                "Текст 'Яндекс' не найден в футере"
+                assert "кинопоиск" in footer.text
+                "Текст 'кинопоиск' не найден в футере"
             except TimeoutException:
                 allure.attach(
                     driver.get_screenshot_as_png(), name="footer_missing",

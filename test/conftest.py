@@ -3,7 +3,6 @@ import requests
 from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
 from webdriver_manager.chrome import ChromeDriverManager
-from webdriver_manager.core.os_manager import ChromeType  # Новый путь импорта
 
 
 class Config:
@@ -57,7 +56,7 @@ def browser():
         try:
             # Альтернативный вариант с Chrome for Testing
             service = Service(
-                ChromeDriverManager(chrome_type=ChromeType.CHROMIUM).install())
+                ChromeDriverManager(chrome_type=ChromeDriverManager).install())
             driver = webdriver.Chrome(service=service, options=options)
         except Exception as e:
             print(f"Ошибка при инициализации Chrome for Testing: {e}")

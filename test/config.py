@@ -1,7 +1,7 @@
 class Config:
     API_URL = "https://hd.kinopoisk.ru/"
     API_KEY = "50884c19-4a50-4f26-86ca-8d3bf8b256ea"
-    # Замените на реальный ключ
+
     HEADERS = {
         "X-API-KEY": API_KEY,
         "Content-Type": "application/json"

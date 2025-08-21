@@ -34,14 +34,14 @@
 
 При проверке тестов через pytest:
 
-Запуск всех тестов с генерацией отчета Allure
+Запуск всех тестов с генерацией отчета Allure:
 python -m pytest --alluredir allure-result
 
 Запуск только UI тестов
-pytest test/test_ui.py -v
+pytest test/test_ui.py -v --alluredir=allure-results
 
 Запуск только API тестов
-pytest test/test_api.py -v
+pytest test/test_api.py -v --alluredir=allure-results
 
 ## Установка
 
