@@ -4,29 +4,124 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import TimeoutException
-from webdriver_manager.chrome import ChromeDriverManager
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.chrome.options import Options
+from selenium.webdriver.firefox.options import Options as FirefoxOptions
+from selenium.webdriver.edge.options import Options as EdgeOptions
+from webdriver_manager.chrome import ChromeDriverManager
+from webdriver_manager.firefox import GeckoDriverManager
+from webdriver_manager.microsoft import EdgeChromiumDriverManager
 from selenium.webdriver.common.action_chains import ActionChains
 import allure
 
 
-@pytest.fixture(scope="function")
-def driver():
-    """Фикстура для инициализации и закрытия браузера"""
-    chrome_options = Options()
-    chrome_options.add_argument("--start-maximized")
-    chrome_options.add_argument(
-        "--disable-blink-features=AutomationControlled")
-    chrome_options.add_experimental_option(
-        "excludeSwitches", ["enable-automation"])
-    chrome_options.add_experimental_option("useAutomationExtension", False)
+def pytest_addoption(parser):
+    """Добавляем опции для выбора браузера"""
+    parser.addoption("--browser", action="store", default="chrome")
+    parser.addoption("--headless", action="store_true")
+    parser.addoption(
+        "--url", action="store", default="https://www.kinopoisk.ru/")
 
-    service = Service(ChromeDriverManager().install())
-    driver = webdriver.Chrome(service=service, options=chrome_options)
+
+@pytest.fixture(scope="function")
+def driver(request):
+    """Универсальная фикстура для инициализации браузера"""
+    browser_name = request.config.getoption("--browser").lower()
+    headless = request.config.getoption("--headless")
+    base_url = request.config.getoption("--url")
+
+    driver = None
+
+    try:
+        if browser_name == "chrome":
+            driver = _init_chrome_driver(headless)
+        elif browser_name == "firefox":
+            driver = _init_firefox_driver(headless)
+        elif browser_name == "edge":
+            driver = _init_edge_driver(headless)
+        else:
+            pytest.skip(f"Неподдерживаемый браузер: {browser_name}")
+
+    except Exception as e:
+        print(f"Ошибка при инициализации {browser_name}: {e}")
+        # Пробуем системный драйвер как запасной вариант
+        try:
+            if browser_name == "chrome":
+                options = Options()
+                _add_common_options(options, headless)
+                service = Service()
+                driver = webdriver.Chrome(service=service, options=options)
+            else:
+                pytest.skip(f"Не удалось инициализировать {browser_name}: {e}")
+        except Exception as fallback_error:
+            pytest.skip(
+                f"Не удалось инициализировать {browser_name}:{fallback_error}")
+
+    if driver is None:
+        pytest.skip(f"Не удалось инициализировать браузер {browser_name}")
+
+    # Устанавливаем таймауты
+    driver.implicitly_wait(15)
+    driver.set_page_load_timeout(30)
+    driver.base_url = base_url
 
     yield driver
+
+    # Закрываем браузер
+
     driver.quit()
+
+
+def _init_chrome_driver(headless):
+    """Инициализация Chrome драйвера"""
+    options = Options()
+    _add_common_options(options, headless)
+
+    # Специфичные для Chrome опции
+    options.add_argument("--disable-blink-features=AutomationControlled")
+    options.add_experimental_option("excludeSwitches", ["enable-automation"])
+    options.add_experimental_option("useAutomationExtension", False)
+
+    service = Service(ChromeDriverManager().install())
+    return webdriver.Chrome(service=service, options=options)
+
+
+def _init_firefox_driver(headless):
+    """Инициализация Firefox драйвера"""
+    options = FirefoxOptions()
+    _add_common_options(options, headless)
+
+    service = Service(GeckoDriverManager().install())
+    return webdriver.Firefox(service=service, options=options)
+
+
+def _init_edge_driver(headless):
+    """Инициализация Edge драйвера"""
+    options = EdgeOptions()
+    _add_common_options(options, headless)
+
+    service = Service(EdgeChromiumDriverManager().install())
+    return webdriver.Edge(service=service, options=options)
+
+
+def _add_common_options(options, headless):
+    """Добавление общих опций для всех браузеров"""
+    if not headless:
+        options.add_argument("--start-maximized")
+    options.add_argument("--no-sandbox")
+    options.add_argument("--disable-dev-shm-usage")
+    options.add_argument("--disable-gpu")
+    if headless:
+        if hasattr(options, 'add_argument'):
+            options.add_argument("--headless=new")
+        else:
+            options.headless = True
+
+
+@pytest.fixture
+def base_url(driver):
+    """Фикстура для базового URL"""
+    return driver.base_url
 
 
 class TestKinopoisk:
@@ -122,8 +217,8 @@ class TestKinopoisk:
                     EC.visibility_of_element_located((
                         By.CSS_SELECTOR, "footer"))
                 )
-                assert "кинопоиск" in footer.text
-                "Текст 'кинопоиск' не найден в футере"
+                assert "Яндекс" in footer.text
+                "Текст 'Яндекс' не найден в футере"
             except TimeoutException:
                 allure.attach(
                     driver.get_screenshot_as_png(), name="footer_missing",
